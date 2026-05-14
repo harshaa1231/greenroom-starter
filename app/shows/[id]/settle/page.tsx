@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/card";
 import { StatusBadge, DealTypeBadge, PlainBadge } from "@/components/ui/badge";
 import { calculateSettlement } from "@/lib/dealMath";
+import type { AuditRow, DealRead, VsDetails } from "@/lib/dealMath";
 import {
   formatMoney,
   formatShowDateFull,
@@ -66,6 +67,7 @@ export default async function SettlePage({
     deal,
     ticketSales,
     expenses,
+    recoups,
     venueCapacity: data.venue?.capacity ?? undefined,
   });
   const grossSoFar = ticketSales.reduce((sum, t) => sum + t.gross, 0);
@@ -130,6 +132,7 @@ export default async function SettlePage({
         {!calc.supported ? (
           <UnsupportedDeal
             dealType={calc.dealType}
+            dealRead={calc.dealRead}
             deal={deal}
             existingSettlement={settlement}
             grossSoFar={grossSoFar}
@@ -357,6 +360,7 @@ function LifecycleBar({
 
 function UnsupportedDeal({
   dealType,
+  dealRead,
   deal,
   existingSettlement,
   grossSoFar,
@@ -366,6 +370,7 @@ function UnsupportedDeal({
   expenseRowCount,
 }: {
   dealType: string;
+  dealRead?: DealRead;
   deal: NonNullable<Awaited<ReturnType<typeof getShowById>>>["deal"];
   existingSettlement: NonNullable<
     Awaited<ReturnType<typeof getShowById>>
@@ -386,6 +391,8 @@ function UnsupportedDeal({
 
   return (
     <>
+      {dealRead && <DealReadPanel dealRead={dealRead} />}
+
       <Card accent="amber">
         <CardContent className="py-12 text-center">
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 ring-1 ring-amber-200/80 mb-5">
@@ -499,6 +506,8 @@ function SupportedSettlement({
 }) {
   return (
     <>
+      {calc.dealRead && <DealReadPanel dealRead={calc.dealRead} />}
+
       {/* Hero number */}
       <div className="text-center py-10 mb-2">
         <div className="eyebrow text-[10px] text-ink-400 mb-3">Total to artist</div>
@@ -531,6 +540,10 @@ function SupportedSettlement({
         )}
       </div>
 
+      {calc.calculationKind === "vs" && calc.vsDetails && (
+        <VsTrustSummary details={calc.vsDetails} />
+      )}
+
       {/* Worksheet breakdown */}
       <Card accent="brand">
         <CardHeader>
@@ -542,25 +555,31 @@ function SupportedSettlement({
           </div>
         </CardHeader>
         <CardContent className="divide-y divide-ink-100/80">
-          <Row
-            label="Gross box office"
-            value={formatMoney(calc.grossBoxOffice)}
-          />
-          <Row label="Net box office" value={formatMoney(calc.netBoxOffice)} />
-          <Row
-            label="Total expenses (passed through)"
-            value={formatMoney(calc.totalExpenses)}
-          />
-          <div className="pt-3" />
-          {calc.steps.map((step, i) => (
-            <Row
-              key={i}
-              label={step.label}
-              value={formatMoney(step.value)}
-              note={step.note}
-            />
-          ))}
-          <div className="pt-3" />
+          {calc.auditRows ? (
+            <AuditRows rows={calc.auditRows} />
+          ) : (
+            <>
+              <Row
+                label="Gross box office"
+                value={formatMoney(calc.grossBoxOffice)}
+              />
+              <Row label="Net box office" value={formatMoney(calc.netBoxOffice)} />
+              <Row
+                label="Total expenses (passed through)"
+                value={formatMoney(calc.totalExpenses)}
+              />
+              <div className="pt-3" />
+              {calc.steps.map((step, i) => (
+                <Row
+                  key={i}
+                  label={step.label}
+                  value={formatMoney(step.value)}
+                  note={step.note}
+                />
+              ))}
+              <div className="pt-3" />
+            </>
+          )}
           <div className="flex items-baseline justify-between py-3 font-semibold">
             <span className="text-[13px] text-ink-900">Total to artist</span>
             <span className="text-[18px] font-mono tabular text-ink-900">
@@ -600,6 +619,235 @@ function SupportedSettlement({
           </CardContent>
         </Card>
       )}
+    </>
+  );
+}
+
+function DealReadPanel({ dealRead }: { dealRead: DealRead }) {
+  const confidence = {
+    ready: {
+      label: "Ready to settle",
+      badge: "brand" as const,
+      accent: "brand" as const,
+      copy: "Base terms are readable enough to run and explain the math.",
+    },
+    review: {
+      label: "Needs review",
+      badge: "amber" as const,
+      accent: "amber" as const,
+      copy: "The math can run, but the settlement should call out the risky read.",
+    },
+    blocked: {
+      label: "Manual model",
+      badge: "rose" as const,
+      accent: "rose" as const,
+      copy: "The base terms are visible, but this variant should stay out of the calculator until modeled.",
+    },
+  }[dealRead.confidence];
+
+  return (
+    <Card accent={confidence.accent}>
+      <CardHeader>
+        <div>
+          <CardTitle>Deal read</CardTitle>
+          <CardDescription>
+            Greenroom reads the free-text deal note first, then checks it
+            against the structured fields.
+          </CardDescription>
+        </div>
+        <PlainBadge variant={confidence.badge}>{confidence.label}</PlainBadge>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6">
+          <div>
+            <div className="text-[14px] font-medium text-ink-900">
+              {dealRead.summary}
+            </div>
+            <div className="text-[12.5px] text-ink-500 mt-1.5 leading-relaxed">
+              {confidence.copy}
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {dealRead.terms.map((term) => (
+                <div
+                  key={term.label}
+                  className="rounded-md border border-ink-200/70 bg-canvas-soft px-3 py-2.5"
+                >
+                  <div className="eyebrow text-[9px] text-ink-400 mb-1">
+                    {term.label}
+                  </div>
+                  <div className="text-[13px] font-mono tabular text-ink-900">
+                    {term.value}
+                  </div>
+                  <div className="text-[10.5px] text-ink-400 mt-1">
+                    {term.source}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {dealRead.flags.length > 0 ? (
+              dealRead.flags.map((flag) => (
+                <div
+                  key={`${flag.label}-${flag.detail}`}
+                  className={`rounded-md px-3 py-2.5 ring-1 ${
+                    flag.severity === "risk"
+                      ? "bg-rose-50/70 text-rose-800 ring-rose-200/80"
+                      : "bg-amber-50/70 text-amber-800 ring-amber-200/80"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 text-[12px] font-semibold">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    {flag.label}
+                  </div>
+                  <div className="text-[11.5px] mt-1 leading-relaxed">
+                    {flag.detail}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-md px-3 py-2.5 ring-1 bg-brand-50/70 text-brand-800 ring-brand-200/80">
+                <div className="flex items-center gap-2 text-[12px] font-semibold">
+                  <Check className="h-3.5 w-3.5" />
+                  No deal-read conflicts found
+                </div>
+                <div className="text-[11.5px] mt-1 leading-relaxed">
+                  The trusted notes and structured fields agree on the core
+                  settlement terms.
+                </div>
+              </div>
+            )}
+
+            {dealRead.assumptions.length > 0 && (
+              <div className="rounded-md border border-ink-200/70 bg-white px-3 py-2.5">
+                <div className="eyebrow text-[9px] text-ink-400 mb-2">
+                  Assumptions to show
+                </div>
+                <div className="space-y-1.5">
+                  {dealRead.assumptions.map((assumption) => (
+                    <div
+                      key={assumption}
+                      className="text-[11.5px] leading-relaxed text-ink-600"
+                    >
+                      {assumption}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function VsTrustSummary({ details }: { details: VsDetails }) {
+  const winnerLabel =
+    details.winner === "percentage" ? "Percentage beats guarantee" : "Guarantee wins";
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <Card>
+        <CardContent>
+          <div className="eyebrow text-[10px] text-ink-500 mb-1">
+            Deal outcome
+          </div>
+          <div className="text-[14px] font-semibold text-ink-900">
+            {winnerLabel}
+          </div>
+          <div className="text-[12px] text-ink-500 mt-1 leading-relaxed">
+            {formatMoney(details.percentageTake)} percentage take vs{" "}
+            {formatMoney(details.guarantee)} floor.
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent>
+          <div className="eyebrow text-[10px] text-ink-500 mb-1">
+            Expense treatment
+          </div>
+          <div className="text-[14px] font-semibold text-ink-900">
+            {details.basis === "gross"
+              ? "No expense deduction"
+              : `${formatMoney(details.appliedExpenses)} counted`}
+          </div>
+          <div className="text-[12px] text-ink-500 mt-1 leading-relaxed">
+            {details.basis === "gross"
+              ? "Vs-gross deal read from the notes."
+              : details.absorbedOrCappedExpenses > 0
+                ? `${formatMoney(details.absorbedOrCappedExpenses)} absorbed or capped out.`
+                : "All passed-through expenses count under the cap."}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card accent={details.disputedRecoups > 0 ? "rose" : undefined}>
+        <CardContent>
+          <div className="eyebrow text-[10px] text-ink-500 mb-1">
+            Recoup posture
+          </div>
+          <div className="text-[14px] font-semibold text-ink-900">
+            {details.recoupsApplied > 0
+              ? `${formatMoney(details.recoupsApplied)} applied`
+              : "No active recoups"}
+          </div>
+          <div className="text-[12px] text-ink-500 mt-1 leading-relaxed">
+            {details.disputedRecoups > 0
+              ? `${formatMoney(details.disputedRecoups)} is disputed and should be explicitly resolved.`
+              : details.recoupTreatment === "against_gross"
+                ? "Deducted before the split per deal notes."
+                : "Nothing extra deducted from gross."}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function AuditRows({ rows }: { rows: AuditRow[] }) {
+  return (
+    <>
+      {rows.map((row) => {
+        const valueClass =
+          row.tone === "positive"
+            ? "text-brand-800"
+            : row.tone === "warning"
+              ? "text-amber-800"
+              : row.tone === "negative"
+                ? "text-ink-600"
+                : "text-ink-900";
+
+        return (
+          <div
+            key={`${row.label}-${row.source}`}
+            className="py-3 grid grid-cols-[1fr_auto] gap-4 items-start"
+          >
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <div className="text-[13px] text-ink-700">{row.label}</div>
+                <span className="rounded bg-ink-50 px-1.5 py-0.5 text-[10px] text-ink-400 ring-1 ring-ink-200/70">
+                  {row.source}
+                </span>
+              </div>
+              {row.note && (
+                <div className="text-[11.5px] text-ink-400 mt-1 max-w-xl leading-snug">
+                  {row.note}
+                </div>
+              )}
+            </div>
+            <div
+              className={`text-[13.5px] font-mono tabular text-right ${valueClass}`}
+            >
+              {formatMoney(row.value)}
+            </div>
+          </div>
+        );
+      })}
+      <div className="pt-3" />
     </>
   );
 }
