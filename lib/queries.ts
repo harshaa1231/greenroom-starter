@@ -152,6 +152,23 @@ export async function getReports() {
   ).length;
   const inAppToolUsageRate = totalDeals > 0 ? supportedCount / totalDeals : 0;
 
+  // Vs deal breakdown: standard (now settleable) vs complex (blocked)
+  const vsDeals = pastDeals.filter((d) => d.dealType === "vs");
+  const standardVsCount = vsDeals.filter((d) => {
+    const notes = d.dealNotesFreetext ?? "";
+    return !/walkout|ratchet|escalator/i.test(notes) && !/\btier\b/i.test(notes);
+  }).length;
+  const complexVsCount = vsDeals.length - standardVsCount;
+
+  // Status/sign-off conflicts: disputed status but positive artist sign-off text
+  const statusSignoffConflicts = pastSettlements.filter((s) => {
+    if (!["disputed", "revised"].includes(s.status)) return false;
+    if (!s.signoffText) return false;
+    return /looks good|ok\b|good night|👍|approved|agree|signed off/i.test(
+      s.signoffText,
+    );
+  }).length;
+
   const settlementStatus: Record<string, number> = {};
   for (const s of pastSettlements) {
     settlementStatus[s.status] = (settlementStatus[s.status] ?? 0) + 1;
@@ -226,6 +243,9 @@ export async function getReports() {
     totalCompTickets,
     totalCompFaceValue,
     compsByCategory,
+    standardVsCount,
+    complexVsCount,
+    statusSignoffConflicts,
   };
 }
 

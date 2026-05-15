@@ -58,7 +58,7 @@ export default async function ShowsPage() {
 
   return (
     <div className="px-12 py-10 max-w-7xl">
-      <div className="mb-14">
+      <div className="mb-14 animate-fade-up">
         <div className="eyebrow mb-3">
           The Crescent · Nashville · 650 cap
         </div>
@@ -78,7 +78,7 @@ export default async function ShowsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-px bg-ink-200/40 rounded-xl overflow-hidden mb-14">
+      <div className="grid grid-cols-3 gap-px bg-ink-200/40 rounded-xl overflow-hidden mb-14 animate-fade-up-1">
         <StatCard label="Shows" value={String(reversed.length)} />
         <StatCard label="Settled" value={String(settledCount)} accent />
         <StatCard

@@ -80,7 +80,7 @@ export function ShowsList({ rows }: { rows: ShowRow[] }) {
             placeholder="Search artists, deals…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-64 pl-9 pr-3 py-2 text-[13px] bg-white border border-ink-200/60 rounded-lg text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-700/20 focus:border-brand-300 transition-all"
+            className="w-72 pl-9 pr-3 py-2 text-[13px] bg-white border border-ink-200/60 rounded-lg text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-700/25 focus:border-brand-400 focus:shadow-[0_0_0_3px_rgba(4,120,87,0.08)] transition-all"
           />
         </div>
       </div>
@@ -149,7 +149,7 @@ function ShowListRow({ row }: { row: ShowRow }) {
       />
       <Link
         href={`/shows/${show.id}`}
-        className="grid grid-cols-[84px_1fr_120px_auto_24px] items-center gap-4 pl-5 pr-2 py-3 rounded-lg hover:bg-white/80 hover:shadow-[0_1px_4px_rgba(26,24,20,0.04)] transition-all duration-150"
+        className="grid grid-cols-[84px_1fr_120px_auto_24px] items-center gap-4 pl-5 pr-2 py-3 rounded-lg hover:bg-white hover:shadow-[0_1px_6px_rgba(26,24,20,0.07)] transition-all duration-150"
       >
         <div>
           <div className="text-[12.5px] font-medium text-ink-800 tabular">

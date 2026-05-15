@@ -320,6 +320,48 @@ export default async function ReportsPage() {
         </Card>
       </div>
 
+      {/* Trust layer signals */}
+      <div className="mb-16">
+        <h2
+          className="font-display text-[24px] font-medium text-ink-900 mb-2"
+          style={{ letterSpacing: "-0.02em" }}
+        >
+          Trust layer signals
+        </h2>
+        <p className="text-[13px] text-ink-500 mb-5 max-w-2xl leading-relaxed">
+          Data quality issues that surface settlement risk before a dispute
+          happens. These are the patterns the settlement trust layer was built to
+          catch.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <SmallMetric
+            label="Status / sign-off conflicts"
+            value={String(r.statusSignoffConflicts)}
+            subtext="Settlements marked Disputed with positive artist sign-off text"
+            alarming={r.statusSignoffConflicts > 0}
+          />
+          <SmallMetric
+            label="Standard Vs deals now in tool"
+            value={String(r.standardVsCount)}
+            subtext={`of ${r.standardVsCount + r.complexVsCount} total Vs deals`}
+          />
+          <SmallMetric
+            label="Complex Vs — manually modeled"
+            value={String(r.complexVsCount)}
+            subtext="Walkout pots, tier ratchets, escalators — intentionally blocked"
+          />
+        </div>
+        {r.statusSignoffConflicts > 0 && (
+          <div className="mt-4 rounded-lg border border-amber-200/60 bg-amber-50/40 px-4 py-3 text-[12.5px] text-amber-800 leading-relaxed">
+            <strong className="font-semibold">{r.statusSignoffConflicts} settlement{r.statusSignoffConflicts === 1 ? "" : "s"}</strong>{" "}
+            show a contradiction: the system status reads <em>Disputed</em> but
+            the artist team&apos;s sign-off text is positive. The trust layer
+            flags this on the settlement page so it can be reconciled before
+            closing.
+          </div>
+        )}
+      </div>
+
       {/* Deal mix */}
       <div className="mb-10">
         <h2
@@ -332,8 +374,9 @@ export default async function ReportsPage() {
           <CardContent>
             <div className="space-y-[6px]">
               {dealMix.map(({ type, count, pct }) => {
-                const supported =
+                const fullySupported =
                   type === "flat" || type === "percentage_of_gross";
+                const partiallySupported = type === "vs";
                 const maxCount = Math.max(...dealMix.map((d) => d.count));
                 const barWidth = maxCount > 0 ? (count / maxCount) * 100 : 0;
                 const friendly: Record<string, string> = {
@@ -353,7 +396,11 @@ export default async function ReportsPage() {
                     <div className="flex-1 flex items-center gap-2">
                       <div
                         className={`h-7 rounded-[4px] flex items-center min-w-[28px] ${
-                          supported ? "bg-brand-700/90" : "bg-amber-500/90"
+                          fullySupported
+                            ? "bg-brand-700/90"
+                            : partiallySupported
+                              ? "bg-brand-500/70"
+                              : "bg-amber-500/90"
                         }`}
                         style={{ width: `${Math.max(barWidth, 3)}%` }}
                       >
@@ -365,9 +412,13 @@ export default async function ReportsPage() {
                         <span className="text-[11px] font-mono tabular text-ink-400">
                           {(pct * 100).toFixed(0)}%
                         </span>
-                        {supported ? (
+                        {fullySupported ? (
                           <span className="text-[9px] text-brand-700 uppercase tracking-[0.08em] font-semibold">
                             in tool
+                          </span>
+                        ) : partiallySupported ? (
+                          <span className="text-[9px] text-brand-600 uppercase tracking-[0.08em] font-semibold">
+                            standard: in tool
                           </span>
                         ) : (
                           <span className="text-[9px] text-amber-700 uppercase tracking-[0.08em] font-semibold">
@@ -380,6 +431,11 @@ export default async function ReportsPage() {
                 );
               })}
             </div>
+            <p className="text-[11.5px] text-ink-400 mt-4 pt-4 border-t border-ink-100/60 leading-relaxed">
+              Vs deals with walkout pots, tier ratchets, or escalators remain
+              manually modeled. Standard Vs deals ({r.standardVsCount} of{" "}
+              {r.standardVsCount + r.complexVsCount}) now settle in-app.
+            </p>
           </CardContent>
         </Card>
       </div>

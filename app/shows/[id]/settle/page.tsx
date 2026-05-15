@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { submitSettlement } from "./actions";
 import {
   ArrowLeft,
   FileWarning,
@@ -84,7 +85,7 @@ export default async function SettlePage({
     <div className={`px-12 py-10 max-w-7xl ${isDisputed ? "bg-gradient-to-b from-rose-50/30 via-canvas to-canvas" : ""}`}>
       <BackLink showId={show.id} />
 
-      <div className="mb-20">
+      <div className="mb-20 animate-fade-up">
         <div className="flex items-center gap-1.5 mb-4">
           <StatusBadge status={show.status} />
           <DealTypeBadge type={deal.dealType} />
@@ -111,7 +112,7 @@ export default async function SettlePage({
 
       {/* Disputed callout */}
       {isDisputed && disputedRecoupValue > 0 && (
-        <div className="mb-8 rounded-lg border border-rose-200/60 bg-rose-50/40 p-5 flex gap-3">
+        <div className="mb-8 rounded-lg border border-rose-200/60 bg-rose-50/40 p-5 flex gap-3 animate-fade-up-1">
           <AlertTriangle className="h-4 w-4 text-rose-700 mt-0.5 shrink-0" />
           <div>
             <div className="text-[13px] font-semibold text-rose-800">
@@ -125,10 +126,12 @@ export default async function SettlePage({
       )}
 
       {settlement && (
-        <LifecycleBar settlement={settlement} disputedRecoups={disputedRecoups.length} />
+        <div className="animate-fade-up-1">
+          <LifecycleBar settlement={settlement} disputedRecoups={disputedRecoups.length} />
+        </div>
       )}
 
-      <div className="space-y-6 mt-6">
+      <div className="space-y-6 mt-6 animate-fade-up-2">
         {!calc.supported ? (
           <UnsupportedDeal
             dealType={calc.dealType}
@@ -142,7 +145,11 @@ export default async function SettlePage({
             expenseRowCount={expenses.length}
           />
         ) : (
-          <SupportedSettlement calc={calc} existingSettlement={settlement} />
+          <SupportedSettlement
+            calc={calc}
+            existingSettlement={settlement}
+            submitAction={submitSettlement.bind(null, show.id)}
+          />
         )}
 
         {recoups.length > 0 && <RecoupsSection recoups={recoups} />}
@@ -304,7 +311,19 @@ function LifecycleBar({
         </div>
 
         <div className="grid grid-cols-5 gap-1 relative">
+          {/* Background track */}
           <div className="absolute top-3.5 left-[10%] right-[10%] h-px bg-ink-200/60" />
+          {/* Progress fill */}
+          {currentIndex > 0 && (
+            <div
+              className={`absolute top-[13px] left-[10%] h-0.5 rounded-full transition-all duration-700 ${
+                isDisputed
+                  ? "bg-gradient-to-r from-rose-400 to-rose-600"
+                  : "bg-gradient-to-r from-brand-500 to-brand-700"
+              }`}
+              style={{ width: `${(currentIndex / (stages.length - 1)) * 80}%` }}
+            />
+          )}
 
           {stages.map((stage, i) => {
             const isComplete = i < currentIndex;
@@ -329,10 +348,19 @@ function LifecycleBar({
                 key={stage.key}
                 className="flex flex-col items-center text-center"
               >
-                <div
-                  className={`relative z-10 w-7 h-7 rounded-full ring-2 flex items-center justify-center ${stageDot}`}
-                >
-                  <Icon className="h-3.5 w-3.5" />
+                <div className="relative z-10">
+                  {isCurrent && (
+                    <span
+                      className={`absolute inset-0 rounded-full animate-ping opacity-40 ${
+                        isDisputed ? "bg-rose-400" : "bg-brand-400"
+                      }`}
+                    />
+                  )}
+                  <div
+                    className={`relative w-7 h-7 rounded-full ring-2 flex items-center justify-center ${stageDot}`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                  </div>
                 </div>
                 <div
                   className={`mt-2.5 text-[11px] font-medium leading-tight ${
@@ -495,6 +523,7 @@ function UnsupportedDeal({
 function SupportedSettlement({
   calc,
   existingSettlement,
+  submitAction,
 }: {
   calc: Extract<
     ReturnType<typeof calculateSettlement>,
@@ -503,6 +532,7 @@ function SupportedSettlement({
   existingSettlement: NonNullable<
     Awaited<ReturnType<typeof getShowById>>
   >["settlement"];
+  submitAction: () => Promise<void>;
 }) {
   return (
     <>
@@ -513,12 +543,13 @@ function SupportedSettlement({
             calc.dealRead.confidence === "ready" &&
             (!existingSettlement || existingSettlement.status === "draft")
           }
+          submitAction={submitAction}
         />
       )}
 
       {/* Hero number */}
-      <div className="text-center py-10 mb-2">
-        <div className="eyebrow text-[10px] text-ink-400 mb-3">Total to artist</div>
+      <div className="text-center py-12 mb-2 animate-fade-up">
+        <div className="eyebrow text-[10px] text-ink-400 mb-4">Total to artist</div>
         <div
           className="text-[72px] font-mono tabular font-bold text-ink-900 leading-none"
           style={{ letterSpacing: "-0.03em" }}
@@ -526,12 +557,18 @@ function SupportedSettlement({
           {formatMoney(calc.totalToArtist)}
         </div>
         {existingSettlement && (
-          <div className="mt-3">
+          <div className="mt-4 flex items-center justify-center gap-2">
             {existingSettlement.status === "paid" ? (
-              <PlainBadge variant="brand">Paid</PlainBadge>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-50 ring-1 ring-brand-200/80 text-brand-700 text-[12px] font-semibold">
+                <Check className="h-3.5 w-3.5" />
+                Paid & settled
+              </span>
             ) : existingSettlement.status === "signed" ||
               existingSettlement.status === "finalized" ? (
-              <PlainBadge variant="brand">Signed</PlainBadge>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-50 ring-1 ring-brand-200/80 text-brand-700 text-[12px] font-semibold">
+                <Check className="h-3.5 w-3.5" />
+                Signed
+              </span>
             ) : existingSettlement.status === "disputed" ? (
               <PlainBadge variant="rose">Disputed</PlainBadge>
             ) : null}
@@ -634,9 +671,11 @@ function SupportedSettlement({
 function DealReadPanel({
   dealRead,
   showConfirmButton = false,
+  submitAction,
 }: {
   dealRead: DealRead;
   showConfirmButton?: boolean;
+  submitAction?: () => Promise<void>;
 }) {
   const confidence = {
     ready: {
@@ -754,20 +793,20 @@ function DealReadPanel({
           </div>
         </div>
 
-        {showConfirmButton && (
+        {showConfirmButton && submitAction && (
           <div className="mt-6 pt-5 border-t border-ink-100/80 flex items-center justify-between gap-4">
             <p className="text-[12px] text-ink-500 leading-relaxed">
-              Deal read looks clean. Confirm to submit this settlement to the
-              artist team.
+              Deal read is clean. Submitting sends this settlement to the artist team for sign-off.
             </p>
-            <button
-              type="button"
-              title="Advances settlement to Submitted — connects to the agent email flow in production."
-              className="shrink-0 inline-flex items-center gap-2 rounded-md bg-brand-700 px-4 py-2 text-[13px] font-medium text-white hover:bg-brand-800 transition-colors"
-            >
-              <Check className="h-3.5 w-3.5" />
-              Confirm and submit
-            </button>
+            <form action={submitAction}>
+              <button
+                type="submit"
+                className="shrink-0 inline-flex items-center gap-2 rounded-lg bg-brand-700 px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-brand-800 hover:scale-[1.02] active:scale-[0.98] transition-all duration-150 shadow-sm shadow-brand-700/20"
+              >
+                <Check className="h-3.5 w-3.5" />
+                Submit to artist team
+              </button>
+            </form>
           </div>
         )}
       </CardContent>
@@ -781,7 +820,7 @@ function VsTrustSummary({ details }: { details: VsDetails }) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <Card>
+      <Card accent="brand">
         <CardContent>
           <div className="eyebrow text-[10px] text-ink-500 mb-1">
             Deal outcome
@@ -947,46 +986,54 @@ function SignoffSection({
   const hasSignoffConflict = isDisputed && !!settlement.signoffText;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Sign-off & notes</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-5">
-        {hasSignoffConflict && (
-          <div className="rounded-md px-3 py-2.5 ring-1 bg-amber-50/70 text-amber-800 ring-amber-200/80">
-            <div className="flex items-center gap-2 text-[12px] font-semibold">
-              <AlertTriangle className="h-3.5 w-3.5" />
-              Status conflict
-            </div>
-            <div className="text-[11.5px] mt-1 leading-relaxed">
-              This settlement is marked Disputed, but the artist team&apos;s
-              sign-off reads as approved. The status should be reconciled
-              before the record is closed.
-            </div>
+    <div className="space-y-4">
+      {hasSignoffConflict && (
+        <div className="rounded-xl border-2 border-amber-300/70 bg-gradient-to-r from-amber-50/80 to-canvas p-5 flex gap-4">
+          <div className="shrink-0 w-10 h-10 rounded-full bg-amber-100 ring-2 ring-amber-300/80 flex items-center justify-center">
+            <AlertTriangle className="h-5 w-5 text-amber-700" />
           </div>
-        )}
-        {settlement.signoffText && (
           <div>
-            <div className="eyebrow text-[10px] text-ink-500 mb-2">
-              From the artist team
+            <div className="text-[13.5px] font-bold text-amber-900 mb-1.5">
+              Status/sign-off conflict
             </div>
-            <div className="text-[13px] text-ink-800 bg-canvas-soft rounded-lg p-4 ring-1 ring-ink-200/60 leading-relaxed">
-              &ldquo;{settlement.signoffText}&rdquo;
-            </div>
+            <p className="text-[12.5px] text-amber-800 leading-relaxed">
+              This settlement is marked <strong className="font-semibold">Disputed</strong>{" "}
+              in the system, but the artist team&apos;s sign-off message reads as approval.
+              This mismatch should be reconciled before closing — the system status doesn&apos;t
+              reflect what the artist team actually communicated.
+            </p>
           </div>
-        )}
-        {settlement.notes && (
-          <div>
-            <div className="eyebrow text-[10px] text-ink-500 mb-2">
-              Mariana&apos;s settlement notes
+        </div>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Sign-off & notes</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {settlement.signoffText && (
+            <div>
+              <div className="eyebrow text-[10px] text-ink-500 mb-2">
+                From the artist team
+              </div>
+              <div className="text-[13px] text-ink-800 bg-canvas-soft rounded-lg p-4 ring-1 ring-ink-200/60 leading-relaxed">
+                &ldquo;{settlement.signoffText}&rdquo;
+              </div>
             </div>
-            <div className="text-[12.5px] text-ink-800 bg-canvas-soft rounded-lg p-4 ring-1 ring-ink-200/60 leading-relaxed">
-              {settlement.notes}
+          )}
+          {settlement.notes && (
+            <div>
+              <div className="eyebrow text-[10px] text-ink-500 mb-2">
+                Mariana&apos;s settlement notes
+              </div>
+              <div className="text-[12.5px] text-ink-800 bg-canvas-soft rounded-lg p-4 ring-1 ring-ink-200/60 leading-relaxed">
+                {settlement.notes}
+              </div>
             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
