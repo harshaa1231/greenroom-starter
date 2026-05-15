@@ -15,9 +15,16 @@ The prototype does four things:
 
 ## Why this slice
 
-The data and research point here. In the database, Vs is the largest deal type: 195 of 537 deals. Roughly 121 are standard enough to support safely, while roughly 57 include walkout pots, tier ratchets, or escalators that require a separate modeling pass. The prompt also says the free-text deal notes are the truth, and the Coastal Spell dispute shows why: the product's structured data can look clean while the actual business dispute lives in ambiguous prose.
+The data and research point here. In the database, Vs is the largest deal type: 195 of 537 deals — yet industry-wide only 18% of customers use the in-app settlement tool, meaning the most common deal type is the least supported. Roughly 121 of those Vs deals are standard enough to support safely, while roughly 57 include walkout pots, tier ratchets, or escalators that require a separate modeling pass.
+
+The prompt says the free-text deal notes are the truth, and the Coastal Spell dispute shows why: the product's structured data can look clean while the actual business dispute lives in ambiguous prose. Querying the database confirmed this is not an isolated case — 24 settlements are marked "disputed" while carrying positive artist sign-off text, and multiple records show the structured percentage field contradicting the deal notes.
 
 I cut the universal calculator because it would be the wrong product signal. The problem is not just arithmetic. Mariana, Diego, Marcus, and Sarah all describe the same trust failure: nobody wants a final number without the deal read, deduction order, and source trail. A calculator that is right for common Vs deals and honest about what it cannot settle is more useful than a broader calculator that gives false confidence.
+
+The other candidate slices each lost on one axis:
+- **Dispute resolution**: the dispute is a symptom. The cause is an unreadable deal at 2am — fix the cause first.
+- **Pre-show deal confirmation**: the right long-term direction, but the payoff is invisible until the show runs. Trust-layer-at-settlement has a measurable outcome the same night.
+- **Agent communication portal**: depends on trust being established at settlement first, and requires an external surface that is out of scope for one slice.
 
 ## Design Choices
 
@@ -37,6 +44,17 @@ I designed for the tired 2am user. The UI is not a configuration-heavy modeling 
 I cut door deals, percentage-of-net deals, comps that count toward gross, receipt attachment flows, edit/revision workflows, agent sharing, payment workflows, and full AI extraction.
 
 The most important cut is complex Vs variants. Walkout pots, tier ratchets, and escalators materially change payout. The prototype reads the base terms and flags them, but intentionally blocks calculation. That is a product taste choice: trust is earned by knowing when not to calculate.
+
+## What the data showed
+
+Querying `data/greenroom.db` directly, not just the UI, revealed several patterns that shaped the design:
+
+- 195 of 537 deals are Vs — the single largest deal type, and the one the in-app tool can't settle.
+- ~121 of those are standard enough to support safely; ~57 include complex variants that intentionally remain blocked.
+- 24 settlements are marked "disputed" in the status field but carry positive artist sign-off text ("Looks good", "OK. Good night.", "👍"). The status badge and the underlying data tell different stories.
+- Multiple records show the structured `percentage` field conflicting with the `deal_notes_freetext` value — the brief's warning about field drift is real, not hypothetical.
+
+These findings directly informed the two most opinionated product choices: making the deal read a visible first-class object, and surfacing sign-off/status conflicts rather than hiding them behind a badge.
 
 ## Validation Plan
 

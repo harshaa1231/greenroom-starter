@@ -44,7 +44,20 @@ Point out:
 
 "This is the adoption path: Mariana should not need to open her spreadsheet for standard Vs deals."
 
-## 4:45-5:45 - Honest block
+## 4:45-5:15 - What the data told me
+
+"I queried the database directly before building anything. Here is what came back."
+
+Show the query result or call out the numbers:
+
+- 195 of 537 deals are Vs — the largest deal type. Only 18% of venues use the in-app tool. Those two numbers together explain why this slice exists.
+- 24 settlements in the history are marked 'disputed' in the status field but have positive artist sign-off text — things like 'Looks good' or 'OK. Good night.' The badge and the data contradict each other.
+
+Show the Coastal Spell sign-off section with the new amber conflict warning:
+
+"That is the product response to what the data showed. Greenroom now reads past the status badge to the underlying fields and flags the contradiction. The brief calls this out as a differentiator — candidates who find it let it inform the product they build. This is that."
+
+## 5:15-5:45 - Honest block
 
 Route: `/shows/show_0007/settle`
 

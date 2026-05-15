@@ -148,7 +148,7 @@ export default async function SettlePage({
         {recoups.length > 0 && <RecoupsSection recoups={recoups} />}
 
         {settlement && (settlement.signoffText || settlement.notes) && (
-          <SignoffSection settlement={settlement} />
+          <SignoffSection settlement={settlement} isDisputed={isDisputed} />
         )}
       </div>
 
@@ -506,7 +506,15 @@ function SupportedSettlement({
 }) {
   return (
     <>
-      {calc.dealRead && <DealReadPanel dealRead={calc.dealRead} />}
+      {calc.dealRead && (
+        <DealReadPanel
+          dealRead={calc.dealRead}
+          showConfirmButton={
+            calc.dealRead.confidence === "ready" &&
+            (!existingSettlement || existingSettlement.status === "draft")
+          }
+        />
+      )}
 
       {/* Hero number */}
       <div className="text-center py-10 mb-2">
@@ -623,7 +631,13 @@ function SupportedSettlement({
   );
 }
 
-function DealReadPanel({ dealRead }: { dealRead: DealRead }) {
+function DealReadPanel({
+  dealRead,
+  showConfirmButton = false,
+}: {
+  dealRead: DealRead;
+  showConfirmButton?: boolean;
+}) {
   const confidence = {
     ready: {
       label: "Ready to settle",
@@ -739,6 +753,23 @@ function DealReadPanel({ dealRead }: { dealRead: DealRead }) {
             )}
           </div>
         </div>
+
+        {showConfirmButton && (
+          <div className="mt-6 pt-5 border-t border-ink-100/80 flex items-center justify-between gap-4">
+            <p className="text-[12px] text-ink-500 leading-relaxed">
+              Deal read looks clean. Confirm to submit this settlement to the
+              artist team.
+            </p>
+            <button
+              type="button"
+              title="Advances settlement to Submitted — connects to the agent email flow in production."
+              className="shrink-0 inline-flex items-center gap-2 rounded-md bg-brand-700 px-4 py-2 text-[13px] font-medium text-white hover:bg-brand-800 transition-colors"
+            >
+              <Check className="h-3.5 w-3.5" />
+              Confirm and submit
+            </button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -906,13 +937,34 @@ function RecoupsSection({ recoups }: { recoups: Recoup[] }) {
   );
 }
 
-function SignoffSection({ settlement }: { settlement: Settlement }) {
+function SignoffSection({
+  settlement,
+  isDisputed,
+}: {
+  settlement: Settlement;
+  isDisputed: boolean;
+}) {
+  const hasSignoffConflict = isDisputed && !!settlement.signoffText;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Sign-off & notes</CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
+        {hasSignoffConflict && (
+          <div className="rounded-md px-3 py-2.5 ring-1 bg-amber-50/70 text-amber-800 ring-amber-200/80">
+            <div className="flex items-center gap-2 text-[12px] font-semibold">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              Status conflict
+            </div>
+            <div className="text-[11.5px] mt-1 leading-relaxed">
+              This settlement is marked Disputed, but the artist team&apos;s
+              sign-off reads as approved. The status should be reconciled
+              before the record is closed.
+            </div>
+          </div>
+        )}
         {settlement.signoffText && (
           <div>
             <div className="eyebrow text-[10px] text-ink-500 mb-2">
