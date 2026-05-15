@@ -19,161 +19,133 @@ an unchecked box.
 
 ---
 
-## Block 1 — Submission mechanics (20 min)
+## Block 1 — Submission mechanics ✅
 > Without this, nothing else matters. A reviewer who can't run the repo or
 > find the right branch scores it zero.
 
-- [ ] **Decide on font regression.** `app/globals.css` and `app/layout.tsx` have
-  uncommitted changes that remove the Fraunces display font added in commit
-  `688672a`. Either revert these two files (`git checkout HEAD --
-  app/globals.css app/layout.tsx`) to keep the designed UI, or commit the
-  removal intentionally. Do not leave them in a mixed state.
+- [x] **Decide on font regression.** Reverted `app/globals.css` and
+  `app/layout.tsx` to HEAD — Fraunces display font kept, designed UI
+  preserved.
 
-- [ ] **Commit all remaining changes.** Stage and commit `db/seed.ts` and
-  `next.config.ts`. Commit message should describe what changed.
+- [x] **Commit all remaining changes.** `db/seed.ts` (unused helper removal)
+  and `next.config.ts` (turbopack config) committed in commit `9f359a5`.
 
-- [ ] **Verify the build is clean.**
+- [x] **Verify the build is clean.**
+  `npx tsc --noEmit` — PASS
+  `npm run lint` — PASS (no errors)
+  `npm run build` — PASS
+
+- [ ] **Fork the repo to your personal GitHub account.** The submission
+  requires "Forked GitHub repo." Current remote points to
+  `samay-cbh/greenroom-starter` — the original starter. Must be your fork.
   ```bash
-  npm run db:reset && npx tsc --noEmit && npm run lint && npm run build
-  ```
-  All three must pass before touching anything else.
-
-- [ ] **Fork the repo to your personal GitHub account.** The submission requires
-  "Forked GitHub repo." The current remote points to `samay-cbh/greenroom-starter`
-  — the original starter. That is not your fork.
-
-- [ ] **Push `settlement-trust-layer` branch to your fork.**
-  ```bash
+  # On GitHub: fork samay-cbh/greenroom-starter to your account
   git remote set-url origin https://github.com/YOUR_USERNAME/greenroom-starter
   git push -u origin settlement-trust-layer
   ```
 
-- [ ] **Smoke test the fork.** Clone it fresh into a temp directory and run
-  `npm install && npm run db:reset && npm run dev`. Confirm all three demo
-  routes load cleanly:
+- [ ] **Smoke test the fork.** Clone fresh and run:
+  ```bash
+  npm install && npm run db:reset && npm run dev
+  ```
+  Confirm all three demo routes load:
   - `/shows/show_coastal_spell_dispute/settle`
   - `/shows/show_0002/settle`
   - `/shows/show_0007/settle`
 
 ---
 
-## Block 2 — Take it deep: surface the data contradiction (45 min)
+## Block 2 — Take it deep: surface the data contradiction ✅
 > The brief explicitly plants this as the differentiator. The database has
 > **24 settlements** marked "disputed" with positive artist signoff text.
-> The current `SignoffSection` renders both fields but never flags the
-> contradiction. That is the one thing reviewers will check.
 
-- [ ] **Add a signoff-vs-status conflict warning in `SignoffSection`.**
+- [x] **Added signoff-vs-status conflict warning in `SignoffSection`.**
   When `settlement.status === "disputed"` AND `settlement.signoffText` is
-  present, render an amber callout above the signoff quote:
-
-  > "This settlement is marked Disputed, but the artist team's sign-off
-  > reads as approved. The status should be reconciled before the record
-  > is closed."
-
-  Keep it one card, one sentence. Do not redesign the section.
+  present, amber callout renders above the signoff quote:
+  "This settlement is marked Disputed, but the artist team's sign-off reads
+  as approved. The status should be reconciled before the record is closed."
 
 - [ ] **Verify it appears on the Coastal Spell route.**
-  `/shows/show_coastal_spell_dispute/settle` — the signoff is
-  *"OK — but flag any future marketing recoup deals."* That should trigger
-  the warning.
+  Run `npm run dev` and open `/shows/show_coastal_spell_dispute/settle`.
+  The amber "Status conflict" callout must appear above the signoff text.
 
-- [ ] **Verify it does NOT appear on clean routes.**
-  `/shows/show_0002/settle` should have no warning (status is not disputed).
-
----
-
-## Block 3 — Design for humans: add one action (30 min)
-> The settle page is fully read-only. At 2am Mariana can see the deal read
-> and audit trail but cannot do anything. One action closes this gap without
-> adding a new feature.
-
-- [ ] **Add a "Confirm deal read" button to `DealReadPanel`.**
-  Show it only when `dealRead.confidence === "ready"` and there is no
-  existing settlement or it is in `draft` status. On click it should simply
-  advance the settlement to `submitted` via a server action or API call.
-  Label: "Confirm and submit to artist team."
-
-  If wiring the server action takes too long, render the button as a
-  non-functional visual placeholder with a tooltip: *"Advances settlement
-  to Submitted — connects to the agent email flow in production."* That
-  is honest and still shows product intent.
-
-- [ ] **Verify the button appears on `/shows/show_0002/settle`** (ready
-  confidence, standard Vs, no existing settled status).
-
-- [ ] **Verify the button does NOT appear on the Coastal Spell route**
-  (confidence is "review", not "ready").
+- [ ] **Verify it does NOT appear on `/shows/show_0002/settle`.**
+  Status on that route is not disputed — no callout should show.
 
 ---
 
-## Block 4 — Show your reasoning: memo (20 min)
-> The memo is close but has two gaps that the live interview will expose.
+## Block 3 — Design for humans: add one action ✅
+> The settle page was fully read-only. One action added without new feature scope.
 
-- [ ] **Add the 18% adoption stat to "Why this slice".** The brief states it
-  directly: *"Industry-wide, only ~18% of customers actively use the in-app
-  settlement tool."* This number belongs in the memo's rationale alongside
-  the 195 Vs deal count. One sentence.
+- [x] **Added "Confirm and submit" button to `DealReadPanel`.**
+  Appears only when `dealRead.confidence === "ready"` AND no settlement
+  exists or it is in `draft` status. Tooltip explains it advances to
+  Submitted and connects to agent email flow in production.
 
-- [ ] **Pre-answer the alternative slices.** Add a short paragraph that names
-  the other cuts and explains why each lost:
-  - *Dispute resolution*: the dispute is a symptom. The cause is an unreadable
-    deal at 2am. Fix the cause.
-  - *Pre-show deal confirmation*: right direction but the payoff is invisible
-    until the show runs. Trust-layer-at-settlement has an observable outcome
-    the same night.
-  - *Agent communication*: requires external surface (email, portal). Too much
-    scope for one slice; depends on trust being established first.
+- [ ] **Verify the button appears on `/shows/show_0002/settle`.**
+  Confidence is "ready", standard Vs, settled status is paid (button should
+  NOT appear — that settlement is already past draft). Find a show with no
+  settlement or draft status to confirm button logic works.
 
-- [ ] **Add a "What the data showed" section (4–5 bullet points).**
-  Include the specific numbers found by querying the database:
-  - 195 of 537 deals are Vs — the largest deal type.
-  - ~121 are standard enough to support; ~57 include complex variants.
-  - 24 settlements are marked "disputed" with positive signoff text —
-    the status badge overstates the conflict.
-  - The `notes_freetext` field and structured percentage field conflict
-    on multiple records — the brief's warning is real, not hypothetical.
-
-- [ ] **Memo must stay under 2 pages when rendered.** Print to PDF after
-  edits and confirm it does not exceed 2 pages.
+- [ ] **Verify it does NOT appear on the Coastal Spell route.**
+  Confidence there is "review" — button must be absent.
 
 ---
 
-## Block 5 — Loom (60–90 min)
-> This is a required deliverable. The script is in `LOOM_SCRIPT.md`.
-> Without the recording the submission is incomplete.
+## Block 4 — Show your reasoning: memo ✅
+> Both gaps are now closed.
 
-- [ ] **Record the Loom.** Target 7 minutes. Follow the script in
-  `LOOM_SCRIPT.md` exactly. Do not improvise the structure.
+- [x] **18% adoption stat added to "Why this slice"** — first paragraph of
+  that section now pairs the 195 Vs deal count with the 18% adoption figure.
 
-- [ ] **Cover all three demo routes in the recording:**
-  - Coastal Spell (disputed recoup + signoff conflict warning)
-  - show_0002 (standard Vs happy path + confirm button)
-  - show_0007 (complex walkout-pot intentionally blocked)
+- [x] **Alternative slices pre-answered** — paragraph added to "Why this slice"
+  naming dispute resolution, pre-show confirmation, and agent communication
+  and explaining why each lost.
 
-- [ ] **Include the data finding moment** (60 seconds, after happy path):
-  Show the database numbers — 24 disputed settlements with positive signoff —
-  and explain that querying the data, not the brief, found this. Show the
-  new signoff-conflict warning as the product response to it.
+- [x] **"What the data showed" section added** — 4 bullets with specific
+  database numbers: 195 Vs deals, 121/57 split, 24 disputed/positive-signoff
+  contradictions, structured field conflicts.
 
-- [ ] **Stay under 10 minutes.** The brief says 5–10 minutes. Going over
-  signals poor editing judgment.
+- [ ] **Confirm memo stays under 2 pages when rendered.** Open
+  `SUBMISSION_MEMO.md`, copy into a doc, print to PDF at standard formatting
+  (11pt, 1in margins). Must not exceed 2 pages. Current word count: 1029.
 
-- [ ] **Upload to Loom and copy the share URL** into `SUBMISSION_README.md`
+---
+
+## Block 5 — Loom (YOU must record this)
+> Required deliverable. Script updated. Recording is on you.
+
+- [x] **Loom script updated** — data-finding moment added at 4:45–5:15,
+  before the honest-block section. Shows the 24-settlement query result and
+  the new signoff-conflict warning as the product response.
+
+- [ ] **Record the Loom.** Target 7 minutes. Follow `LOOM_SCRIPT.md`.
+
+- [ ] **Cover all three demo routes:**
+  - Coastal Spell — disputed recoup + amber signoff conflict warning
+  - show_0002 — standard Vs happy path
+  - show_0007 — complex walkout-pot intentionally blocked
+
+- [ ] **Include the data finding moment** (4:45–5:15 in the script).
+  Show the database numbers, explain you found it by querying directly.
+
+- [ ] **Stay under 10 minutes.**
+
+- [ ] **Upload to Loom. Paste share URL into `SUBMISSION_README.md`**
   under a "Loom" heading.
 
 ---
 
 ## Block 6 — Final checklist before submitting
 
-- [ ] `npx tsc --noEmit` — no errors
-- [ ] `npm run lint` — no errors (warnings in seed.ts are pre-existing, acceptable)
-- [ ] `npm run build` — clean build
-- [ ] All three demo routes load in a fresh `npm run dev`
-- [ ] Memo is under 2 pages
-- [ ] Loom URL is in `SUBMISSION_README.md`
-- [ ] Branch `settlement-trust-layer` is pushed to your personal fork
-- [ ] Repo is public (or reviewer has access)
+- [x] `npx tsc --noEmit` — PASS
+- [x] `npm run lint` — PASS
+- [x] `npm run build` — PASS
+- [ ] All three demo routes verified in a running `npm run dev`
+- [ ] Memo confirmed under 2 pages (print to PDF)
+- [ ] Loom URL added to `SUBMISSION_README.md`
+- [ ] Branch `settlement-trust-layer` pushed to your personal fork
+- [ ] Repo is public (or reviewer has been granted access)
 
 ---
 
