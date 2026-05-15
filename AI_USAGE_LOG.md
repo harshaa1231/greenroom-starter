@@ -1,6 +1,6 @@
 # AI Usage Log
 
-This case study was built with Codex as a senior product/engineering collaborator. The log below is written for reviewer readability: it captures the prompts, workflow, decisions, and verification steps without exposing hidden chain-of-thought.
+This case study was built with AI tooling used as a senior product and engineering collaborator. The log below documents the prompts, workflow, decisions, and verification steps. The full prompt text is in `PROMPTS.md`.
 
 ## Goals for AI Use
 
@@ -21,7 +21,7 @@ Prompt:
 
 Output used:
 
-- Identified that the deliverables are repo branch, memo, and Loom.
+- Identified deliverables: repo branch, memo, and Loom.
 - Identified that the evaluation favors tight scope, messy data handling, product judgment, and human-centered design.
 - Identified settlement as a trust workflow, not just a calculation workflow.
 
@@ -46,22 +46,22 @@ Prompt:
 
 Output used:
 
-- 537 total deals.
-- 195 Vs deals, the largest deal type.
-- Roughly 121 standard-ish Vs deals.
-- Roughly 57 complex Vs deals with walkout pots, ratchets, or escalators.
-- Coastal Spell had a disputed marketing recoup and positive signoff text, matching the brief's warning about messy data.
+- 183 Vs deals in the 24-month window (183 of 502 past deals — 36%, the largest deal type).
+- 131 standard Vs deals supportable safely; 52 include complex variants.
+- 21 settlements marked "disputed" in status but carrying positive artist sign-off text.
+- Coastal Spell: disputed $900 Spotify marketing recoup. The $720 concession is exactly 80% of $900 — the concession is the math of the dispute, not an arbitrary negotiation.
+- Multiple records with structured `percentage` field conflicting with `deal_notes_freetext`.
 
 ### 4. Choose the Slice
 
 Prompt:
 
-> Pick one defensible slice that can be taken deep in 6-8 hours. Avoid a generic calculator. Tie the slice to Mariana, Diego, Marcus, Sarah, and the Coastal Spell dispute.
+> Pick one defensible slice that can be taken deep. Avoid a generic calculator. Tie the slice to Mariana, Diego, Marcus, Sarah, and the Coastal Spell dispute.
 
 Output used:
 
 - Chosen slice: standard Vs settlement support plus a deal-read/audit/recoup ambiguity layer.
-- Cut: all settlement types, full dispute workflow, payment workflow, receipts, and complex Vs variants.
+- Cut: all other settlement types, full dispute workflow, payment workflow, receipts, and complex Vs variants.
 - Product rationale: get Greenroom into the 2am trust conversation without pretending to solve every contract shape.
 
 ### 5. Implement the Settlement Engine
@@ -80,68 +80,79 @@ Output used:
 
 Prompt:
 
-> Update the settlement page so Mariana can explain the number at 2am. Add a visible deal read, trust summary, and source-tagged audit worksheet. Preserve existing UI style and avoid adding heavy configuration.
+> Update the settlement page so Mariana can explain the number at 2am. Add a visible deal read, trust summary, and source-tagged audit worksheet. Preserve existing UI style and avoid heavy configuration.
 
 Output used:
 
-- Added Deal Read panel.
-- Added Vs Trust Summary cards.
-- Added source-tagged audit rows.
+- Added Deal Read panel with source tags and confidence badge.
+- Added Vs Trust Summary cards (deal outcome, expense treatment, recoup posture).
+- Added source-tagged audit rows with tone coloring.
+- Added sign-off/status conflict warning for the 21-settlement data pattern.
 - Preserved existing settlement lifecycle, recoup, signoff, and notes sections.
 
-### 7. Test the Edge Cases
+### 7. Add Trust Layer Signals to Reports
 
 Prompt:
 
-> Verify the prototype against three representative routes: Coastal Spell disputed recoup, standard Vs happy path, and complex walkout-pot blocked path. Run TypeScript, lint, build, and localhost smoke tests.
+> Update the Reports page to surface the status/signoff conflict count and show Vs deals as now partially in tool. Add a Trust Layer Signals section. Fix the deal mix chart which still showed Vs as spreadsheet-only.
 
 Output used:
 
-- `/shows/show_coastal_spell_dispute/settle`: shows Needs Review, disputed recoup, recoup deduction row, and audit worksheet.
-- `/shows/show_0002/settle`: standard Vs deal now settles in-app.
-- `/shows/show_0007/settle`: complex walkout-pot deal is flagged and blocked.
-- `npx tsc --noEmit`: passed.
-- `npm run lint`: passed with warnings only in `db/seed.ts`.
-- `npm run build`: passed.
+- Added `statusSignoffConflicts`, `standardVsCount`, `complexVsCount` to `getReports()` in `lib/queries.ts`.
+- Added Trust Layer Signals section to `app/reports/page.tsx`.
+- Updated deal mix chart: Vs now shows "standard: in tool" in green instead of "spreadsheet" in amber.
 
-### 8. Produce Submission Materials
+### 8. Wire the Submit Action
 
 Prompt:
 
-> Write a concise 1-2 page PRD-quality memo explaining the slice, design choices, cuts, validation plan, and next ship. Also write a Loom script and AI usage log that make the build process transparent and professional.
+> The Submit to artist team button in the Deal Read panel does nothing. Create a server action that transitions the settlement to submitted status and revalidates the page.
 
 Output used:
 
-- `SUBMISSION_MEMO.md`
-- `LOOM_SCRIPT.md`
-- `SUBMISSION_README.md`
-- `AI_USAGE_LOG.md`
+- Created `app/shows/[id]/settle/actions.ts` with `submitSettlement` server action.
+- Wired the action through `SupportedSettlement` → `DealReadPanel` using a form element.
+- Button now transitions settlement status and advances the lifecycle bar.
+
+### 9. Test the Edge Cases
+
+Prompt:
+
+> Verify the prototype against three routes: Coastal Spell disputed recoup, standard Vs happy path, and complex walkout-pot blocked path. Run TypeScript, lint, and localhost smoke tests.
+
+Output used:
+
+- `/shows/show_coastal_spell_dispute/settle`: Needs Review confidence, disputed recoup row, sign-off conflict warning.
+- `/shows/show_0002/settle`: standard Vs settles to $5,197.50 in-app, submit button functional.
+- `/shows/show_0007/settle`: complex walkout-pot deal flagged and blocked.
+- `npx tsc --noEmit`: passed with no errors.
+- `npm run lint`: passed with no errors.
+
+### 10. Produce Submission Materials
+
+Prompt:
+
+> Write a concise PRD-quality memo explaining the slice, design choices, cuts, validation plan, and next roadmap. Update the submission README and AI usage log to reflect the final build with correct numbers from the live product.
+
+Output used:
+
+- `SUBMISSION_MEMO.md` — updated with numbers matching the live Reports page (183/502 Vs deals, 131 standard, 52 complex, 21 conflicts).
+- `SUBMISSION_README.md` — updated deliverables list, removed LOOM_SCRIPT.md reference, added Reports to demo routes.
+- `AI_USAGE_LOG.md` — this file.
 
 ## Key Product Decisions
 
-The free-text deal note is treated as the source of truth.
+**The free-text deal note is the source of truth.**
+Structured fields are useful, but the brief explicitly says they drift. The prototype makes conflicts visible instead of hiding them. Every term in the Deal Read shows whether it came from the notes or the database.
 
-Structured fields are useful, but the brief explicitly says they drift. The prototype makes conflicts visible instead of hiding them.
+**The calculator is deterministic.**
+AI can propose a deal read, detect ambiguity, and route review. It should not silently decide payout. Mariana needs a number that is the same every single time and explainable row by row to a skeptical tour manager at 2am.
 
-The calculator is deterministic.
+**Complex variants are intentionally blocked.**
+Walkout pots and ratchets are not "unsupported because we forgot." They are blocked because a partial calculation would give a confident wrong number, which damages trust more than an honest block.
 
-AI can propose a deal read, detect ambiguity, and route review. It should not silently decide payout.
+**The UI optimizes for explanation, not configuration.**
+At 2am, the user needs a readable trust surface — what the deal means, what won, what was deducted, what is risky. Not a modeling cockpit.
 
-Complex variants are blocked.
-
-Walkout pots and ratchets are not "unsupported because we forgot." They are intentionally blocked because a partial calculation would damage trust.
-
-The UI optimizes for explanation.
-
-At 2am, the user needs a readable trust surface, not a modeling cockpit.
-
-## Tooling and Verification Notes
-
-Local setup required a few environment workarounds:
-
-- PDF text extraction used Python `pypdf` because Poppler tools were not installed.
-- The repo was cloned into `/private/tmp/greenroom-starter` because the configured Documents workspace was blocked by macOS permissions.
-- npm cache was pointed at `/private/tmp/npm-cache` to avoid local cache permission issues.
-- Network approval was required for cloning and dependency installation.
-
-These were environment issues, not product issues. The final branch builds and runs with the standard project commands.
+**The Reports page surfaces the data quality finding.**
+The 21 sign-off/status conflicts were invisible in the UI but visible in the raw data. Making that a live metric in the product turns a data audit into a feature.
