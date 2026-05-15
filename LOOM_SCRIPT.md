@@ -1,15 +1,18 @@
 # Loom Script — Greenroom Settlement Trust Layer
-# Runtime: ~6 minutes | Record in one take if possible
+# Runtime: ~6 minutes
 
 ---
 
-## Tabs open before you hit record
-1. http://localhost:3000/reports
-2. http://localhost:3000/shows/show_coastal_spell_dispute/settle
-3. http://localhost:3000/shows/show_0002/settle
-4. http://localhost:3000/shows/show_0007/settle
+## Four tabs. Open them before you record.
 
-Start on your face. Don't share screen until [SCREEN] marker.
+| Tab | URL | What it covers |
+|-----|-----|----------------|
+| 1 | http://localhost:3000/reports | Problem size, scope defense, the data finding |
+| 2 | http://localhost:3000/shows/show_coastal_spell_dispute/settle | The messy real case — depth + design |
+| 3 | http://localhost:3000/shows/show_0002/settle | Happy path — standard Vs now works, submit button |
+| 4 | http://localhost:3000/shows/show_0007/settle | Honest block — complex variant, the cut |
+
+Start on your face. No screen until [SCREEN] marker.
 
 ---
 
@@ -17,249 +20,286 @@ Start on your face. Don't share screen until [SCREEN] marker.
 
 ---
 
-### INTRO [0:00–0:35] — face only, no screen
-
-[Eyes on camera. Human scene. No product yet.]
+### INTRO [0:00–0:35] — face only
 
 "It's 2am. A show just wrapped at a 650-capacity venue in Nashville.
 The tour manager is at the merch table, waiting to get paid and get on the bus.
 
 Mariana — the lead booker — opens a Google Sheet she's used for three years,
 manually types in the ticket numbers, the expenses, the deal terms,
-and tries to produce a number the tour manager will trust enough to sign off on tonight.
+and tries to produce a number the tour manager will trust enough to sign.
 
 If they trust it, everyone goes home. If they don't —
-if the tour manager says 'I don't think that marketing recoup should come off before our split' —
-the show doesn't close. It becomes a Monday email thread. A dispute. A damaged relationship.
+if the tour manager pushes back on one line item —
+the show doesn't close tonight. It becomes a Monday email thread.
+It becomes a dispute. It damages the relationship with the agent.
 
-That's the problem I picked. Not the math — the trust.
-Here's what I built, why I picked this slice, and what I cut."
+That's not a math problem. That's a trust problem.
+I found the leverage point inside it, and here's what I built."
 
 ---
 
-### ACT 1 — THE PROBLEM IN NUMBERS [0:35–1:15]
+### ACT 1 — THE PROBLEM AND THE LEVERAGE POINT [0:35–1:45]
 
-[SCREEN — Tab 1: /reports. Let it load. Two-second pause.]
+[SCREEN — Tab 1: /reports. Two-second pause before speaking.]
 
-"This is the Reports page. 502 shows. $3.2 million gross. $1.9 million to artists.
+"This is the Reports page. 502 shows over 24 months.
+$3.2 million gross. $1.9 million paid to artists.
 
-That number on the left: 63%. That's the share of deals the in-app tool cannot handle.
-332 of 502 shows — Mariana opens a spreadsheet.
-The CEO's own words are right there at the top: 'Our customers love us in spite of it, not because of it.'"
+That number in the top left: 63%.
+63% of deals at The Crescent cannot be settled inside Greenroom.
+332 shows where Mariana goes back to a spreadsheet.
+The CEO's own words are right there: 'Our customers love us in spite of it, not because of it.'
+
+Now — settlement is several adjacent problems wearing one name:
+deal modeling, audit trails, real-time prediction, the 2am walkthrough,
+agent communication, dispute resolution.
+I was not going to try to fix all of them."
 
 [Scroll to Deal Mix]
 
-"Here's what that 63% breaks into. 183 Vs deals — 36% of all deals, the largest type.
-102 percentage-of-net deals. 29 door deals.
-Before this build, all of them said 'spreadsheet' in amber."
+"Here is where I found the leverage point.
+
+183 Vs deals. Guarantee versus percentage of net, whichever's greater.
+The single largest deal type. 36% of all deals.
+And the tool couldn't touch any of them.
+
+I had four candidate slices. Here's why three of them lost.
+
+Dispute resolution: the disputes are a symptom.
+The root cause is that the deal read is invisible at 2am. Fix the cause.
+
+Pre-show deal confirmation: right long-term direction,
+but the payoff is invisible until the show runs. You can't measure trust that night.
+
+Agent communication portal: needs trust to exist inside the product first.
+You can't share a number you don't believe in.
+
+Vs settlement support won because it's the highest-frequency gap
+with the most immediate measurable outcome — and the data confirmed exactly
+what kind of failure it creates. Which brings me to the most interesting thing I found."
+
+[Scroll to Trust Layer Signals]
+
+"Before writing any code, I queried the database directly —
+not the UI, the actual SQLite file.
+
+This is what messy real-world data looks like.
+
+21 settlements are marked Disputed in the system status field.
+But the artist team's own sign-off message on those same records says
+'Looks good' or 'OK. Good night.'
+
+The status badge says one thing. The artist already approved it.
+On 21 shows, the product's surface view and the underlying data
+are telling different stories — and nobody's catching it.
+
+That's the leverage point. The 2am walkthrough isn't broken because the math is hard.
+It's broken because the trust signals are hidden. That's what I built for."
 
 ---
 
-### ACT 1.5 — WHY THIS SLICE, NOT THE OTHERS [1:15–1:50]
-
-[Stay on Reports — Deal Mix visible. This is the scope defense beat.]
-
-"I had four candidate slices: dispute resolution, pre-show deal confirmation,
-the agent communication portal, and this one — Vs settlement support.
-
-Dispute resolution lost because it treats the symptom.
-The root cause is that the deal read is invisible at 2am — fix that first.
-
-Pre-show confirmation is the right long-term play, but the payoff is invisible
-until the show actually runs. You can't measure it the same night.
-
-Agent portal requires trust to already exist inside the product before
-you extend it to an external surface. That's not where we are.
-
-Vs deals won because they're the highest-frequency unsupported case —
-183 of 502 — and the Coastal Spell dispute proved exactly what goes wrong
-when the deal read isn't surfaced: ambiguous prose, no audit trail, a $720 concession.
-
-131 of those 183 are standard enough to support safely.
-52 have walkout pots, tier ratchets, or escalators — I'll show you how I handled those.
-
-That's the scope. Let me show you what I built inside it."
-
----
-
-### ACT 2 — COASTAL SPELL: GOING DEEP ON THE MESSINESS [1:50–3:30]
+### ACT 2 — COASTAL SPELL: READING THE MESSY CASE [1:45–3:20]
 
 [Tab 2: /shows/show_coastal_spell_dispute/settle. Pause while it loads.]
 
-"Coastal Spell. The show the brief calls out specifically — and the one that shaped
-every product decision I made.
+"Coastal Spell. The show the brief specifically calls out —
+and the one that confirmed every product decision I made.
 
-The deal: $5,000 guarantee versus 80% of net after expenses, capped at $2,500.
-The Crescent applied a $900 Spotify pre-show ad recoup off the top, before the split.
-WME disputed it. The GM conceded $720.
+Deal: $5,000 guarantee versus 80% of net, expenses capped at $2,500.
+The Crescent applied a $900 Spotify pre-show ad recoup off the top before the split.
+WME disputed it. The GM conceded $720 to close the show.
 
-Here's what I noticed when I looked at the data:
-$720 is exactly 80% of $900. The concession is the math of the dispute —
-whether the recoup reduces gross before the percentage split.
-That's not in any UI. I found it by querying the database directly."
+I went looking for why the concession was $720 specifically.
+$720 is exactly 80% of $900. The dispute was about whether the recoup
+reduces gross before the percentage split — at 80%, that difference is $720.
+The concession amount is the math of the dispute.
+That's not in any field in the UI. I found it by reading the data closely."
+
+[Point to the red callout banner at the top]
+
+"Before Mariana opens any numbers: one recoup in dispute, $900 contested.
+Not buried. First thing on the page."
 
 [Point to the Deal Read panel]
 
-"This is the core feature. The Deal Read panel.
+"This is the core of what I built. The Deal Read panel.
 
-The brief says explicitly: prose contradicts structured values. Fields drift over time.
-What the UI shows isn't always what the data says.
+Here's the opinionated position: the free-text deal note —
+the thing Mariana actually wrote when she booked the show —
+is treated as the source of truth. The structured database fields are checked against it.
 
-So Greenroom now reads the free-text deal note first — the thing Mariana
-actually wrote when she booked the show — and checks it against the structured fields.
-Every term has a source tag. Guarantee: $5,000, from the deal notes.
-Split: 80%, from the deal notes. Cap: $2,500, from the deal notes.
+Every term shows its source. Guarantee: $5,000 — from the deal notes.
+Split: 80% — from the deal notes. Cap: $2,500 — from the deal notes.
 
-If those drift from the structured fields in the database, you see a conflict flag.
-That's taking it deep: not just calculating, but making the source of every input visible
-so that at 2am, when the tour manager points at a number and says 'where did that come from,'
-Mariana has an answer."
+When those drift from the structured fields — when someone updated the database
+after the fact and it no longer matches what was agreed —
+you get a red conflict flag. That's the 'fields drift over time' problem from the brief,
+made visible in the product for the first time."
 
-[Point to the flags]
+[Point to the flag cards]
 
-"The flags catch the rest of the messiness. Recoup language present — needs to be
-resolved out loud before sign-off. Deal changed after first entry — there's a
-later note flagging the WME ambiguity.
+"The flags. 'Recoup language present' — this needs to be resolved out loud at the table.
+'Deal changed after first entry' — there's a note logged after booking flagging the ambiguity.
 
-The confidence badge says 'Needs Review.' Not ready to settle.
-That's a design choice. The math can run. But Mariana shouldn't submit
-without acknowledging these flags at the table. The badge protects her
-from skipping past a real risk at 2am when she just wants to go home."
+Confidence: 'Needs Review.' Not 'Ready to settle.'
+
+That distinction is a design choice. The math can run.
+But Mariana shouldn't click submit without acknowledging these flags with the tour manager.
+At 2am, the badge is the thing that slows her down long enough to say it out loud.
+That's designing for the human, not for the screen."
 
 [Scroll to Worksheet]
 
-"The worksheet. Gross: $19,840. Fees: $1,984. The $900 Spotify recoup
-— amber, disputed — sitting exactly where it enters the math.
-Expenses: $1,600, within the $2,500 cap. Then the split.
+"The worksheet. Every row, every source.
 
-Every row tagged to its source. Any line item is challengeable,
-and the trail exists to resolve it."
+Gross: $19,840 — from ticket sales.
+Less fees: $1,984 — from ticket sales.
+Less the $900 Spotify recoup against gross — amber, disputed, visible.
+Less $1,600 in approved expenses — within the $2,500 cap.
+Then the split base, the percentage take, the guarantee floor.
 
-[Scroll to Sign-off]
+Any line item is challengeable. The trail exists to resolve it."
 
-"And here's the finding that came from querying the raw data, not the UI.
+[Scroll to Sign-off section]
 
-Status: Disputed. Artist sign-off: 'OK — but flag any future marketing recoup deals.'
+"And here's the 21-settlement finding, live in the product.
 
-That's an approval. Not a dispute. And the product was hiding the contradiction.
+System status: Disputed.
+Artist team's actual message: 'OK — but flag any future marketing recoup deals.'
 
-I found 21 settlements in this history where the status badge says Disputed
-but the artist's own message is positive — 'Looks good,' 'OK. Good night.'
+That's an approval with a note. Not a dispute.
 
-Greenroom now reads both fields and surfaces the conflict as an amber warning.
-That's the difference between designing for screens — showing a badge —
-and designing for humans — showing what's actually true."
+Greenroom now reads both fields — the status and the sign-off text —
+and surfaces an amber warning: these two things contradict each other,
+reconcile before you close this settlement.
+
+Designing for screens means showing the badge.
+Designing for humans means surfacing what's actually true."
 
 ---
 
-### ACT 3 — HAPPY PATH: VS NOW SETTLES IN-APP [3:30–4:25]
+### ACT 3 — HAPPY PATH: STANDARD VS NOW SETTLES [3:20–4:15]
 
 [Tab 3: /shows/show_0002/settle]
 
-"Sunday Drivers. Standard Vs. $1,405 guarantee versus 90% of net, $700 expense cap.
-This show was in the 63% before tonight. Mariana ran it in a spreadsheet."
+"Sunday Drivers. $1,405 guarantee versus 90% of net, expenses capped at $700.
+Before this build: unsupported. Mariana's spreadsheet."
 
-[Point to Deal Read — green, Ready to settle]
+[Point to Deal Read — green]
 
-"Deal Read is green. Ready to settle. Greenroom parsed the deal note —
-$1,405 guarantee, 90%, $700 cap — and the structured fields agree. Clean.
+"Deal Read is green. Ready to settle.
+Greenroom parsed the deal note: $1,405 guarantee, 90%, $700 cap.
+Checked against the structured fields. They agree."
 
-Here's the math, row by row.
+[Point to the hero number]
 
-Gross: $7,195. Fees: $720. Net: $6,475.
-Expenses were $1,717 — capped at $700. So $700 counts.
-Split base: $5,775. 90% of that: $5,197.50.
+"Total to artist: $5,197.50. Out of the in-app engine.
+
+The math, so you can follow it:
+Gross $7,195. Fees $720. Net $6,475.
+Expenses $1,717 — but capped at $700. So $700 counts.
+Split base $5,775. 90% of that: $5,197.50.
 That beats the $1,405 guarantee. Percentage wins.
+The worksheet shows that decision explicitly — which leg won and why."
 
-The worksheet shows exactly that decision, with every source tagged.
-A tour manager can follow that math without trusting a black box."
+[Point to the three VsTrust cards]
+
+"Three cards above the worksheet: which leg won, how expenses were treated, recoup posture.
+These answer the three questions a tour manager asks before they'll wire money.
+If all three are clean, Mariana walks through them in two minutes.
+No spreadsheet. No PDF. She just explains what the product already surfaced."
 
 [Point to Submit button]
 
-"When the deal read is clean and the settlement is in draft,
-this button is a real server action — settlement transitions to submitted,
-lifecycle bar advances, artist team gets the next step.
-
-That's the full loop. Deal read, math, submit — without Mariana touching a spreadsheet."
+"And this button is a real server action.
+Deal read is clean, settlement is in draft — hit submit.
+Status transitions. Lifecycle bar advances. Artist team is next.
+That's the full loop inside Greenroom."
 
 ---
 
-### ACT 4 — THE HONEST BLOCK [4:25–4:45]
+### ACT 4 — THE HONEST BLOCK [4:15–4:35]
 
 [Tab 4: /shows/show_0007/settle]
 
-"Briar Road. $2,631 guarantee, 90% net, $8,516 in box office.
+"Briar Road. $2,631 guarantee, 90% of net, $8,516 in gross.
 And a walkout pot — after breakeven, all incremental gross goes to the artist.
 
 Greenroom reads the base terms. Sees the walkout pot. Refuses to calculate.
 
-This is a reasoning trade-off I made explicitly: I could have built a partial calculator
-that gets the base terms right and ignores the walkout pot.
-I didn't, because a confident number that's wrong by thousands is worse than
-an honest block. The 52 complex Vs deals stay in this state until
-the modeling is done right — not done fast."
+I could have built a calculator that ignores the walkout pot and gets the base right.
+I didn't — because a confident number wrong by thousands is worse than an honest block.
+The 52 complex Vs deals stay here until the modeling is done properly.
+That's not a limitation. That's the product being opinionated about when to trust itself."
 
 ---
 
-### ACT 5 — REASONING, AI, WHAT'S NEXT [4:45–5:45]
+### ACT 5 — REASONING, MEMO, AND AI [4:35–5:40]
 
-"On the AI usage — because the question isn't whether I used AI,
-it's whether I used it to amplify my judgment or substitute for it.
+"Two of the four deliverables are in the repo alongside the prototype.
 
-I built this with Claude Code. It read the case study brief, queried the database
-and surfaced the 21-settlement conflict finding, built the calculation engine,
-built the UI. The full prompt log is in the repo — every prompt, what I used, what I rejected.
+The memo — SUBMISSION_MEMO.md — is the PRD-quality writeup: the slice choice,
+design decisions, what I cut and why, a validation plan, and what ships next.
+If you want the full reasoning on any trade-off I'm about to mention, it's in there.
 
-The product decisions were mine: which slice, which cuts, where the tool blocks
-instead of calculating. And the payout math is deterministic — regex and arithmetic,
-not a language model — because at settlement time the number needs to be
-the same every time, inspectable row by row, by someone who doesn't trust software at 2am.
+On the cuts: door deals, percentage-of-net, receipt attachments, revision history,
+the agent communication portal. All real problems. None the first trust wedge.
+The trade-off I accepted: by going narrow on Vs, I left 102 percentage-of-net shows
+still on spreadsheets. I made that call because getting Vs deeply right —
+with source tags, conflict detection, expense caps, honest blocking —
+builds more trust than broadly covering everything at shallow depth.
 
-AI should classify the deal read, detect ambiguity, route edge cases for review.
-It should not decide the payout. That's the line, and I drew it on purpose.
+On AI: I built this with Claude Code. It read the brief, queried the database,
+surfaced the 21-settlement conflict finding, wrote the calculation engine, built the UI.
+The full prompt log is in AI_USAGE_LOG.md — every prompt, what I used, what I rejected.
 
-One honest trade-off: I cut full AI extraction from the deal read.
-The parser is regex-based, which means it misses deal notes that don't follow
-the patterns I wrote. The risk is false confidence on an edge-case phrasing.
-I accepted that trade-off because deterministic and wrong-sometimes beats
-probabilistic and unpredictable when money is moving.
+The question for an Applied AI PM role isn't whether I used AI.
+It's whether I used it to amplify my judgment or substitute for it.
 
-What ships next: pre-show confirm-deal-read, so the conflict is caught Wednesday
-not at 2am. Then revision history on disputed lines — Coastal Spell needed
-a record of the venue read, WME's read, and the concession. Then expand Vs:
-vs-gross, tier ratchets, walkout pots, in that order."
+The payout math is deterministic. Regex and arithmetic — not a language model.
+At settlement time, Mariana needs the same number every time,
+explainable row by row to a skeptical tour manager who does not trust software at 2am.
+AI's job here is to classify the deal read, flag ambiguity, and route edge cases
+for human review — before the show, not during it. That's the line.
+
+What ships next: pre-show confirm-deal-read — catch the recoup ambiguity on Wednesday.
+Then revision history on disputed line items.
+Then expand Vs: vs-gross, tier ratchets, walkout pots, in that order."
 
 ---
 
-### CLOSE [5:45–6:05]
+### CLOSE [5:40–6:00]
 
-"Five evaluation criteria. Let me map them in one sentence each.
+"502 shows. 183 Vs deals. Zero in-app Vs support before this.
 
-Scope tightly: 183 Vs deals, the largest unsupported category, the clearest trust failure pattern.
-Take it deep: field drift, disputed recoups, 21 status conflicts, expense caps, walkout pot blocking.
-Show your reasoning: the memo explains every cut and the trade-off I accepted with each one.
-Design for humans: every feature answers a question Mariana or the tour manager asks at 2am.
-Use AI like a senior teammate: AI queried the data and built the tool. The judgment was mine.
+131 now settle inside Greenroom, with a source-tagged audit trail
+and a conflict detector that reads past the status badge to the actual data.
+52 are honestly blocked until the modeling is right.
 
-502 shows. 131 now settle in-app. 52 are honestly blocked.
+The scope is tight. The reasoning is in the memo. The prototype runs.
+And the AI amplified the build — it didn't make the calls.
+
 That's the slice. That's why."
 
 ---
 
-## Recording notes
+## Notes for recording
 
-**The scope defense (Act 1.5):** This is the most important beat. Don't rush it.
-Name each alternative slice, dismiss it in one sentence, then land on why Vs.
+**Act 1 is the most important.** The leverage point framing — and the four-alternative
+dismissal — needs to land confidently. Don't rush it. If you stumble here, pause and reset.
 
-**The "design for humans" thread:** It's in the intro and in Coastal Spell ("the badge
-protects her from skipping past a real risk at 2am"). Keep that 2am framing in your
-voice throughout — it's the through-line of the whole demo.
+**"Opinionated" voice:** When you say "Here's the opinionated position: the free-text
+deal note is the source of truth" — say it like you mean it. Not hedged.
 
-**The close:** The five-criteria close is unusual but confident. It works if you deliver
-it crisply, not as a list you're reading. Say it like you've been thinking about it
-the whole time — because you have.
+**The 2am thread:** It's in the intro, in the Needs Review badge, in the submit button,
+and in the close ("a skeptical tour manager who does not trust software at 2am").
+Keep that voice consistent throughout — it's the through-line.
 
-**Numbers pace:** One beat of silence after every dollar figure. "$5,197.50" — pause — "that beats the guarantee."
+**Numbers:** Pause one beat after every dollar figure. "$5,197.50" — pause — "out of the in-app engine."
 
-**Stumbles:** Keep going. For a PM role, how you handle an unexpected moment
-is part of what they're evaluating.
+**Memo and AI log:** Don't show them on screen — just name them. The evaluator knows
+where to find them. One sentence each is enough.
+
+**Stumbles:** Keep going. A PM who recovers cleanly from a stumble is more impressive
+than one who sounds rehearsed.
