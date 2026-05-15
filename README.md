@@ -190,21 +190,6 @@ data/                       # Markdown context + greenroom.db
 - **Geist Sans / Mono** (self-hosted via the `geist` package) for body + code
 - **lucide-react** for icons, **date-fns** for dates
 
-Everything is deliberately conventional. Use Cursor, Claude Code, or any other AI tool to navigate and modify the codebase — we expect you to.
-
----
-
-## How to submit
-
-When you're done:
-
-1. **Push your branch.** `git add . && git commit -m "your message" && git push`
-2. **Send the hiring contact:**
-   - The link to your forked repo
-   - Your 3–5 page PRD-quality memo (PDF, Notion, or Google Doc)
-   - A 5–10 minute Loom walking us through the prototype and memo together
-
----
 
 ## Troubleshooting
 
@@ -258,10 +243,6 @@ npm run db:studio
 
 Opens [Drizzle Studio](https://orm.drizzle.team/drizzle-studio/overview) at `local.drizzle.studio` — a visual table browser. You can also open `data/greenroom.db` with any SQLite client (e.g. [TablePlus](https://tableplus.com/), [DBeaver](https://dbeaver.io/), or `sqlite3` CLI).
 
-### Anything else
 
-If you're stuck, email the hiring contact. We'd rather you ask than burn an hour fighting a setup issue.
-
----
 
 Welcome to The Crescent.
